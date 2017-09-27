@@ -114,6 +114,16 @@ orgvalues_predict <- PLSpredict(trainData = trainData,
                                 smMatrix = orgvalues_sm2,
                                 mmMatrix = orgvalues_mm2)
 
+orgvalues_metrics <- validatePredict(orgvalues2, orgvalues_sm2, orgvalues_mm2, kfold = 10, reps = 1)
+
+orgvalues_metrics$PLSRMSE
+orgvalues_metrics$PLSMAPE
+orgvalues_metrics$PLSMAD
+orgvalues_metrics$PLSR2
+
 orgvalues_metrics <- validatePredict(orgvalues2, orgvalues_sm2, orgvalues_mm2, kfold = 10, reps = 20)
 
-
+orgvalues_metrics$PLSRMSE
+orgvalues_metrics$PLSMAPE
+orgvalues_metrics$PLSMAD
+orgvalues_metrics$PLSR2
