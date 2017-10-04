@@ -71,11 +71,11 @@ validatePredict <- function(dataset, smMatrix, mmMatrix, maxIt=300, stopCriterio
       testHolder <- PLSpredict(trainingData, testingData ,smMatrix, mmMatrix, maxIt, stopCriterion)
       
       #PLS test model for collecting actuals
-      PLS_actual_model <- simplePLS(testingData,smMatrix,mmMatrix,maxIt,stopCriterion)
+      PLS_actual_model <- simplePLS(dataset,smMatrix,mmMatrix,maxIt,stopCriterion)
       
       #Initialize PLS residuals and actuals holder matrices
       PLSactuals <- testHolder$testData[,targets]
-      PLS_composite_actuals <- as.matrix(PLS_actual_model$fscores[,uniqueTarget])
+      PLS_composite_actuals <- as.matrix(PLS_actual_model$fscores[testIndexes,uniqueTarget])
       PLS_composite_predictions <- as.matrix(testHolder$compositeScores[,uniqueTarget])
       PLSresiduals <- testHolder$residuals[,targets]
       

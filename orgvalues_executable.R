@@ -106,6 +106,8 @@ source("./lib/validatePredict.R")
 #Load Data
 set.seed(222)
 
+# Example of a simple partition and prediction on the data:
+
 trainData <- orgvalues2[1:120, ]
 testData <- orgvalues2[121:172, ]
 
@@ -114,6 +116,7 @@ orgvalues_predict <- PLSpredict(trainData = trainData,
                                 smMatrix = orgvalues_sm2,
                                 mmMatrix = orgvalues_mm2)
 
+# Example of running validate predict with 10 fold, 1 rep
 orgvalues_metrics <- validatePredict(orgvalues2, orgvalues_sm2, orgvalues_mm2, kfold = 10, reps = 1)
 
 orgvalues_metrics$PLSRMSE
@@ -121,9 +124,49 @@ orgvalues_metrics$PLSMAPE
 orgvalues_metrics$PLSMAD
 orgvalues_metrics$PLSR2
 
+# Example of running validate predict with 10 fold, 20 rep
 orgvalues_metrics <- validatePredict(orgvalues2, orgvalues_sm2, orgvalues_mm2, kfold = 10, reps = 20)
 
 orgvalues_metrics$PLSRMSE
 orgvalues_metrics$PLSMAPE
 orgvalues_metrics$PLSMAD
-orgvalues_metrics$PLSR2
+
+
+# Code to create the results for CONSTRUCT LEVEL RMSE 
+
+#Create 10 equally sized folds
+folds <- cut(seq(1,nrow(orgvalues2)),breaks=10,labels=FALSE)
+
+# Predicted values
+PLS_predicted_outsample_OA <- matrix(,nrow = 172,ncol = 1,dimnames = list(1:172,"OA"))
+# In-sample predictions
+PLS_predicted_insample_OA <- matrix(,nrow = 172,ncol = 10,dimnames = list(1:172,1:10))
+
+for(x in 1:10) {
+  testIndexes <- which(folds==x,arr.ind=TRUE)
+  trainIndexes <- which(folds!=x,arr.ind=TRUE)
+  testingData <- orgvalues2[testIndexes, ]
+  trainingData <- orgvalues2[-testIndexes, ]
+  
+  #PLS prediction on testset model
+  testHolder <- PLSpredict(trainingData, testingData ,orgvalues_sm2, orgvalues_mm2, maxIt = 300, stopCriterion = 7)
+  PLS_predicted_outsample_OA[testIndexes,1] <-  testHolder$compositeScores[,7]
+  #PLS prediction on trainset model
+  trainHolder <- PLSpredict(trainingData, trainingData ,orgvalues_sm2, orgvalues_mm2, maxIt = 300, stopCriterion = 7)
+  PLS_predicted_insample_OA[trainIndexes,x] <- trainHolder$compositeScores[,7]
+  PLS_predicted_insample_OA[testIndexes,x] <- 0
+  ifelse(x == 10, results <- cbind(PLS_predicted_outsample_OA,rowSums(PLS_predicted_insample_OA)/9),0)
+         
+}
+
+# Add actuals* values
+results <- cbind(results,orgvalues2_pls$fscores[,7])
+
+# Name results columns
+colnames(results) <- c("Out-of-sample predictions","In-sample predictions","Actuals")
+
+# Write out CSV of results
+write.csv(results, file = "results.csv")
+OOSRMSE <- sqrt(mean((orgvalues2_pls$fscores[,7] - results[,1])^2))
+ISRMSE <- sqrt(mean((orgvalues2_pls$fscores[,7] - results[,2])^2))
+
